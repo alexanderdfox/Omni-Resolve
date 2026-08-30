@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni-Resolve: Custom Routine & Ops Suite</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --panel-bg: #1f2833;
+            --text-main: #c5c6c7;
+            --accent-blue: #66fcf1;
+            --accent-cyan: #45a29e;
+            --accent-lightning: #00ffff;
+            --danger: #cf6679;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            transition: background 0.2s ease;
+        }
+
+        body.flash {
+            background-color: #1a3a4b;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel-bg);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 8px;
+            box-shadow: 0 0 25px rgba(102, 252, 241, 0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #0b0c10;
+            border-bottom: 2px solid var(--accent-cyan);
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 110px;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            padding: 12px 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            border-right: 1px solid #1f2833;
+        }
+
+        .tab-btn:hover {
+            background: #1f2833;
+            color: var(--accent-blue);
+        }
+
+        .tab-btn.active {
+            background: var(--panel-bg);
+            color: var(--accent-blue);
+            border-bottom: 2px solid var(--accent-blue);
+        }
+
+        .module-content {
+            display: none;
+            padding: 15px;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 350px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .module-content.active {
+            display: flex;
+        }
+
+        .header-desc {
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            margin-bottom: 2px;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        .card {
+            background: #111418;
+            border: 1px solid var(--accent-cyan);
+            padding: 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .card:hover:not(.resolved) {
+            border-color: var(--accent-lightning);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card.resolved {
+            border-color: var(--accent-blue);
+            background: #16242c;
+            opacity: 0.7;
+            cursor: default;
+        }
+
+        .card-delete {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .card-delete:hover {
+            color: #ff4d4d;
+        }
+
+        .customizer-box {
+            background: #111418;
+            border: 1px dashed var(--accent-cyan);
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .customizer-box input {
+            flex: 1;
+            min-width: 140px;
+            background: #0b0c10;
+            border: 1px solid var(--accent-cyan);
+            color: var(--text-main);
+            padding: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
+        }
+
+        .customizer-box button {
+            background: var(--accent-cyan);
+            color: #0b0c10;
+            border: none;
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .customizer-box button:hover {
+            background: var(--accent-blue);
+        }
+
+        .console-log {
+            background: #0b0c10;
+            border: 1px solid var(--accent-cyan);
+            padding: 10px;
+            border-radius: 4px;
+            height: 100px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0b0c10;
+            padding: 12px 15px;
+            border-top: 2px solid var(--accent-cyan);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .action-button {
+            background: var(--panel-bg);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue);
+            padding: 8px 14px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .action-button:hover:not(:disabled) {
+            background: var(--accent-blue);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--accent-blue);
+        }
+
+        .action-button:disabled {
+            border-color: #444;
+            color: #444;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('habits', this)">1. Habit Routine</button>
+        <button class="tab-btn" onclick="switchTab('ops', this)">2. DevOps Node</button>
+        <button class="tab-btn" onclick="switchTab('pomodoro', this)">3. Focus Backlog</button>
+    </div>
+
+    <!-- MODULE 1: HABIT ROUTINE -->
+    <div id="habits" class="module-content active">
+        <div class="header-desc">Maintain core lifestyle parameters before they decay into negligence.</div>
+        <div class="customizer-box">
+            <input type="text" id="newHabitsInput" placeholder="Add custom habit...">
+            <button onclick="addCustomItem('habits')">Add</button>
+            <button onclick="replaceDefaults('habits')" style="background:var(--danger); color:#fff;">Replace Defaults</button>
+        </div>
+        <div class="grid-cards" id="habitsCardsContainer"></div>
+        <div class="console-log" id="habitsLog">[System] Habit engine initialized. Complete routines to lock in daily streaks.</div>
+    </div>
+
+    <!-- MODULE 2: DEVOPS OPS -->
+    <div id="ops" class="module-content">
+        <div class="header-desc">Inspect critical infrastructure nodes and apply diagnostic patches.</div>
+        <div class="customizer-box">
+            <input type="text" id="newOpsInput" placeholder="Add custom server node...">
+            <button onclick="addCustomItem('ops')">Add</button>
+            <button onclick="replaceDefaults('ops')" style="background:var(--danger); color:#fff;">Replace Defaults</button>
+        </div>
+        <div class="grid-cards" id="opsCardsContainer"></div>
+        <div class="console-log" id="opsLog">[System] Cluster health monitoring active. Execute remote patches.</div>
+    </div>
+
+    <!-- MODULE 3: POMODORO BACKLOG -->
+    <div id="pomodoro" class="module-content">
+        <div class="header-desc">Clear your sub-task backlog to trigger the automated focus cooldown period.</div>
+        <div class="customizer-box">
+            <input type="text" id="newPomodoroInput" placeholder="Add custom task...">
+            <button onclick="addCustomItem('pomodoro')">Add</button>
+            <button onclick="replaceDefaults('pomodoro')" style="background:var(--danger); color:#fff;">Replace Defaults</button>
+        </div>
+        <div class="grid-cards" id="pomodoroCardsContainer"></div>
+        <div class="console-log" id="pomodoroLog">[System] Backlog sprint loaded. Clear all queue tasks to initiate break.</div>
+    </div>
+
+    <div class="controls-bar">
+        <div class="status-indicator" id="globalStatus">Status: Active Cycle 1</div>
+        <button class="action-button" id="resetBtn" onclick="resetCurrentModule()">Reset Module</button>
+    </div>
+</div>
+
+<script>
+    let currentModuleKey = 'habits';
+
+    const defaultTemplates = {
+        habits: [
+            { name: 'Hydration', value: 87, resolved: false },
+            { name: 'Deep Work', value: 64, resolved: false },
+            { name: 'Physical Motion', value: 92, resolved: false }
+        ],
+        ops: [
+            { name: 'Node-Alpha', value: 87, resolved: false },
+            { name: 'Node-Beta', value: 64, resolved: false },
+            { name: 'Node-Gamma', value: 92, resolved: false }
+        ],
+        pomodoro: [
+            { name: 'Task #1', value: 50, resolved: false },
+            { name: 'Task #2', value: 50, resolved: false },
+            { name: 'Task #3', value: 50, resolved: false }
+        ]
+    };
+
+    let appData = JSON.parse(sessionStorage.getItem('omni_resolve_session_data')) || {
+        habits: { cycle: 1, isResting: false, items: JSON.parse(JSON.stringify(defaultTemplates.habits)) },
+        ops: { cycle: 1, isResting: false, items: JSON.parse(JSON.stringify(defaultTemplates.ops)) },
+        pomodoro: { cycle: 1, isResting: false, items: JSON.parse(JSON.stringify(defaultTemplates.pomodoro)) }
+    };
+
+    function saveState() {
+        sessionStorage.setItem('omni_resolve_session_data', JSON.stringify(appData));
+    }
+
+    function switchTab(tabKey, btnElement) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.module-content').forEach(c => c.classList.remove('active'));
+
+        btnElement.classList.add('active');
+        document.getElementById(tabKey).classList.add('active');
+        currentModuleKey = tabKey;
+        updateUI();
+    }
+
+    function logToModule(modKey, text) {
+        const logBox = document.getElementById(modKey + 'Log');
+        if (logBox) {
+            logBox.innerHTML += `<br>> ${text}`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+
+    function triggerFlash() {
+        document.body.classList.add('flash');
+        setTimeout(() => document.body.classList.remove('flash'), 200);
+    }
+
+    function addCustomItem(modKey) {
+        const inputElem = document.getElementById(`new${modKey.charAt(0).toUpperCase() + modKey.slice(1)}Input`);
+        if (!inputElem) return;
+        const nameVal = inputElem.value.trim();
+        if (!nameVal) return;
+
+        let mod = appData[modKey];
+        mod.items.push({
+            name: nameVal,
+            value: Math.floor(Math.random() * 40) + 60,
+            resolved: false
+        });
+
+        inputElem.value = '';
+        saveState();
+        updateUI();
+        logToModule(modKey, `Added custom item '${nameVal}'.`);
+    }
+
+    function replaceDefaults(modKey) {
+        const inputElem = document.getElementById(`new${modKey.charAt(0).toUpperCase() + modKey.slice(1)}Input`);
+        if (!inputElem) return;
+        const nameVal = inputElem.value.trim();
+        if (!nameVal) {
+            alert("Please type a new name in the input box to replace the defaults with.");
+            return;
+        }
+
+        let mod = appData[modKey];
+        mod.items = [{
+            name: nameVal,
+            value: Math.floor(Math.random() * 40) + 60,
+            resolved: false
+        }];
+
+        inputElem.value = '';
+        saveState();
+        updateUI();
+        logToModule(modKey, `Defaults cleared. Replaced with single custom item '${nameVal}'.`);
+    }
+
+    function deleteItem(modKey, index, event) {
+        event.stopPropagation();
+        let mod = appData[modKey];
+        if (mod.items.length <= 1) {
+            alert("Module must retain at least one item.");
+            return;
+        }
+        let removed = mod.items.splice(index, 1);
+        saveState();
+        updateUI();
+        logToModule(modKey, `Removed item '${removed[0].name}'.`);
+    }
+
+    function resolveItem(modKey, index) {
+        let mod = appData[modKey];
+        if (mod.isResting) return;
+
+        let item = mod.items[index];
+        if (item.resolved) return;
+
+        triggerFlash();
+        item.resolved = true;
+        
+        if (modKey === 'habits') {
+            logToModule(modKey, `Checked off '${item.name}'. Daily energy restored.`);
+        } else if (modKey === 'ops') {
+            logToModule(modKey, `Diagnostic patch deployed to ${item.name}. Core stabilized.`);
+        } else {
+            logToModule(modKey, `Cleared backlog item '${item.name}'. Sprint progress updated.`);
+        }
+
+        saveState();
+        updateUI();
+        checkModuleCompletion(modKey);
+    }
+
+    function updateUI() {
+        let mod = appData[currentModuleKey];
+        let container = document.getElementById(`${currentModuleKey}CardsContainer`);
+        container.innerHTML = '';
+
+        mod.items.forEach((item, index) => {
+            let card = document.createElement('div');
+            card.className = `card ${item.resolved ? 'resolved' : ''}`;
+            card.onclick = () => resolveItem(currentModuleKey, index);
+
+            let statusText = '';
+            if (item.resolved) {
+                statusText = currentModuleKey === 'habits' ? 'Active (100%)' : currentModuleKey === 'ops' ? 'Online (Stable)' : 'Completed';
+            } else {
+                statusText = currentModuleKey === 'habits' ? `Decaying (${item.value}%)` : currentModuleKey === 'ops' ? `Alert (Rot: ${item.value})` : 'Pending';
+            }
+
+            card.innerHTML = `
+                <button class="card-delete" onclick="deleteItem('${currentModuleKey}', ${index}, event)" title="Remove item">×</button>
+                ${item.name}<br><span style="font-size:0.75rem; opacity:0.8;">${statusText}</span>
+            `;
+            container.appendChild(card);
+        });
+
+        if (mod.isResting) {
+            document.getElementById('globalStatus').innerText = `Status: Cooldown / Resting`;
+        } else {
+            document.getElementById('globalStatus').innerText = `Status: Active Cycle ${mod.cycle}`;
+        }
+    }
+
+    function checkModuleCompletion(modKey) {
+        let mod = appData[modKey];
+        if (mod.items.length === 0) return;
+        let allDone = mod.items.every(i => i.resolved);
+
+        if (allDone) {
+            mod.isResting = true;
+            logToModule(modKey, `[System] Module fully completed! Entering 3-second cooldown...`);
+            updateUI();
+
+            let countdown = 3;
+            let timerInterval = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    document.getElementById('globalStatus').innerText = `Status: Resting (${countdown}s left)`;
+                } else {
+                    clearInterval(timerInterval);
+                    mod.cycle++;
+                    mod.isResting = false;
+                    
+                    mod.items.forEach(i => {
+                        i.resolved = false;
+                        i.value = Math.floor(Math.random() * 40) + 60;
+                    });
+
+                    saveState();
+                    logToModule(modKey, `[System] Cooldown elapsed. Automated cycle ${mod.cycle} initiated.`);
+                    if (currentModuleKey === modKey) {
+                        updateUI();
+                    }
+                }
+            }, 1000);
+        }
+    }
+
+    function resetCurrentModule() {
+        let mod = appData[currentModuleKey];
+        mod.isResting = false;
+        mod.items.forEach(i => i.resolved = false);
+        saveState();
+        logToModule(currentModuleKey, `[System] Module manually recycled and reset.`);
+        updateUI();
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html>
